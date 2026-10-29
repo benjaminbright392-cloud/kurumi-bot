@@ -1,4 +1,6 @@
-// KURUMI V7 - NO ADMIN BLOCK | Owner 2349025648773 | Mod 2347047506371
+// KURUMI V7 - FIXED FOR RENDER
+require('http').createServer((_,res)=>res.end('KURUMI V7 BOT ONLINE - LIVE')).listen(process.env.PORT||10000,()=>console.log('PORT OPENED FOR RENDER'));
+
 require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
@@ -13,15 +15,25 @@ const OWNER = '2349025648773';
 const MODS = ['2349025648773', '2347047506371'];
 const BOT_START = Date.now();
 
+// Create session folder if missing (fixes Render crash)
+if(!fs.existsSync('./session')) fs.mkdirSync('./session', { recursive: true });
+if(!fs.existsSync('./media')) fs.mkdirSync('./media', { recursive: true });
+
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+
+if(!OPENROUTER_KEY){
+  console.log("❌ NO API KEY FOUND! Add OPENAI_API_KEY in Render Environment");
+}
+
 const openai = new OpenAI({ 
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: OPENROUTER_KEY,
   defaultHeaders: { "HTTP-Referer": "https://kurumi.bot", "X-Title": "Kurumi AI" }
 });
 
 function isMod(jid){ if(!jid) return false; const num = jid.split('@')[0].split(':')[0].replace(/[^0-9]/g,''); return MODS.some(m => num.includes(m) || m.includes(num)); }
 function getRandomKurumi(){ try{ for(const dir of ['./media/menu','./media','./kurumi/media/menu']){ if(!fs.existsSync(dir)) continue; const files = fs.readdirSync(dir).filter(f => /\.(jpg|png|jpeg)$/i.test(f)); if(files.length>0) return path.join(dir, files[Math.floor(Math.random()*files.length)]); } return null; }catch{ return null; } }
-async function kurumiAI(prompt){ try{ const chat = await openai.chat.completions.create({ messages: [{ role: "system", content: "You are Kurumi Tokisaki, cute elegant proper English." }, { role: "user", content: prompt }], model: "meta-llama/llama-3.1-8b-instruct", max_tokens: 300 }); return chat.choices[0].message.content; }catch(e){ return "Error: "+e.message; } }
+async function kurumiAI(prompt){ try{ const chat = await openai.chat.completions.create({ messages: [{ role: "system", content: "You are Kurumi Tokisaki, cute elegant proper English." }, { role: "user", content: prompt }], model: "meta-llama/llama-3.1-8b-instruct", max_tokens: 300 }); return chat.choices[0].message.content; }catch(e){ console.log("AI Error:", e.message); return "Error: "+e.message; } }
 
 async function startBot() {
   const { version } = await fetchLatestBaileysVersion();
@@ -30,8 +42,11 @@ async function startBot() {
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', async (up) => {
     const { connection, lastDisconnect, qr } = up;
-    if(qr){ qrcode.generate(qr, { small: true }); console.log("SCAN QR"); }
-    if(connection === 'close' && lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) setTimeout(startBot, 3000);
+    if(qr){ qrcode.generate(qr, { small: true }); console.log("SCAN QR BELOW - YOU HAVE 30 SECS"); }
+    if(connection === 'close'){
+      console.log("Connection closed", lastDisconnect?.error?.message);
+      if(lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) setTimeout(startBot, 3000);
+    }
     if(connection === 'open') console.log("✅ KURUMI V7 ONLINE - NO ADMIN BLOCK");
   });
 
@@ -82,38 +97,12 @@ async function startBot() {
 `╭━━━ *KURUMI MD V7* ━━━╮
 ┃ Prefix: ${PREFIX}
 ╰━━━━━━━━━━━━━━━⭓
-
-*ADMIN* 👑
-• ${PREFIX}kick @user
-• ${PREFIX}add 234...
-• ${PREFIX}promote / ${PREFIX}demote @user
-• ${PREFIX}tagall / ${PREFIX}hidetag
-• ${PREFIX}close / ${PREFIX}open / ${PREFIX}closegc / ${PREFIX}opengc
-• ${PREFIX}group close / open
-• ${PREFIX}link
-
-*FUN* 🎲
-• ${PREFIX}gay / les / simp / handsome / beautiful / cute etc
-• ${PREFIX}ship / love / crush / kill / roast / insult
-• ${PREFIX}dice / coinflip / slot / rps
-• ${PREFIX}meme / pickup / hack / dox / chaos
-
-*ANIME* 💞
-• ${PREFIX}hug / kiss / slap / pat / cuddle / cry
-• ${PREFIX}waifu / neko / blush / smile / wave etc
-
-*STICKER* 🎨
-• ${PREFIX}s / ${PREFIX}sticker / ${PREFIX}toimg
-
-*AI* 🧠
-• ${PREFIX}ai / kurumi [question]
-• ${PREFIX}imagine / ${PREFIX}kurumipic
-
-*WEB* 🌐
-• ${PREFIX}google / ${PREFIX}ss / ${PREFIX}pinterest
-
-*UTILITY* ⚙️
-• ${PREFIX}ping / ${PREFIX}runtime / ${PREFIX}owner / ${PREFIX}mods
+*ADMIN* 👑 .kick @user .add 234... .promote / demote @user .tagall .hidetag .close / open .link
+*FUN* 🎲 .gay .ship .dice .coinflip .slot .rps .meme .roast
+*ANIME* 💞 .hug .kiss .slap .waifu .neko
+*STICKER* 🎨 .s .toimg
+*AI* 🧠 .ai / kurumi [question] .imagine
+*UTILITY* ⚙️ .ping .runtime .owner .mods
 `;
       return reply(menuText);
     }
@@ -143,10 +132,8 @@ async function startBot() {
         if(command === 'link'){ const code = await sock.groupInviteCode(from); return reply('https://chat.whatsapp.com/'+code); }
       } catch(e){ return reply(`❌ Failed: ${e.message}`); }
     }
-
     if(command === 'joke'){ try{ const r = await axios.get('https://official-joke-api.appspot.com/random_joke'); return reply(r.data.setup+"\n"+r.data.punchline); }catch{ return reply('Could not fetch joke'); } }
     if(command === '8ball'){ const a=['Yes.','No.','Maybe.','Definitely!']; return reply('🎱 '+a[Math.floor(Math.random()*a.length)]); }
-
     const inter = ['hug','kiss','slap','pat','cuddle','cry','waifu','neko','bully','bonk','yeet','blush','smile','wave','highfive','handhold','nom','happy','wink','poke','dance','shinobu','megumin','awoo','cringe'];
     const interMap = { shinobu: 'waifu', megumin: 'waifu', awoo: 'waifu', cringe: 'blush', yeet: 'bonk' };
     if(inter.includes(command)){
@@ -162,10 +149,8 @@ async function startBot() {
       }catch(e){ return reply(`Failed: ${e.message}`); }
       return;
     }
-
     if(command === 's' || command === 'sticker'){ const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage; const mediaMsg = quoted ? { message: quoted } : m; try{ const buf = await downloadMediaMessage(mediaMsg, 'buffer', {}, { logger: pino(), reuploadRequest: sock.updateMediaMessage }); return sock.sendMessage(from, { sticker: buf }, { quoted: m }); }catch{ return reply('Reply to an image/video with .s'); } }
     if(command === 'toimg'){ const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage; if(!quoted) return reply('Reply to a sticker with .toimg'); const buf = await downloadMediaMessage({ message: { stickerMessage: quoted } }, 'buffer', {}, { logger: pino(), reuploadRequest: sock.updateMediaMessage }); return sock.sendMessage(from, { image: buf }, { quoted: m }); }
-
     if(['kurumi','ai','gpt'].includes(command)){ if(!q) return reply('Usage: '+PREFIX+command+' hello'); const res = await kurumiAI(q); return reply(res); }
     if(command === 'imagine' || command === 'image'){ if(!q) return reply('Usage: .'+command+' prompt'); const url = 'https://image.pollinations.ai/prompt/'+encodeURIComponent(q)+'?width=512&height=768&nologo=true'; return sock.sendMessage(from, { image: { url: url }, caption: '🎨 '+q }, { quoted: m }); }
     if(command === 'pinterest' || command === 'pin'){ if(!q) return reply(`Usage: .pinterest query`); const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(q)} pinterest aesthetic?width=768&height=1024&nologo=true&seed=${Math.floor(Math.random()*1000)}`; return sock.sendMessage(from, { image: { url: url }, caption: `📌 Pinterest: ${q}` }, { quoted: m }); }

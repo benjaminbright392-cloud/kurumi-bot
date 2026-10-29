@@ -6,7 +6,6 @@ const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 const fs = require('fs');
 const axios = require('axios');
-const path = require('path');
 
 const PREFIX='.'; const OWNER='2349025648773'; const MODS=['2349025648773','2347047506371']; const BOT_START=Date.now();
 if(!fs.existsSync('./session')) fs.mkdirSync('./session',{recursive:true});
@@ -26,7 +25,8 @@ async function kurumiAI(prompt){
       }catch(e){ console.log("Groq fail"); }
     }
     const res=await axios.get(`https://text.pollinations.ai/${encodeURIComponent(`You are Kurumi Tokisaki, cute yandere, <350 chars. User: ${prompt}`)}?model=openai`,{timeout:20000});
-    return (typeof res.data==='string'?res.data:JSON.stringify(res.data)).slice(0,[STRIPPED]
+    const txt = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+    return txt.slice(0, 500);
   }catch(e){ return `Ara ara~ Try again darling! 💖`; }
 }
 
@@ -56,7 +56,6 @@ async function startBot(){
     const args=body.slice(PREFIX.length).trim().split(/ +/); const command=args.shift().toLowerCase(); const q=args.join(' ');
     const mention=m.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; const targetTag=mention?"@"+mention.split('@')[0]:"you"; const mentions=mention?[mention]:[];
 
-    // MENU - NO OPAY HERE!
     if(command==='menu'||command==='help'||command==='bot'||command==='kurumimenu'){
       const menuText=`╭━━━ *KURUMI V7 ULTIMATE* ━━━╮
 ┃ Prefix: . | AI: ✅
@@ -114,7 +113,6 @@ async function startBot(){
 
 Type .donate to support 💖
 _Ara ara~ Darling~_`;
-
       try{ return await reply(menuText); }catch{ return await reply(menuText); }
     }
 
@@ -132,7 +130,6 @@ _Ara ara~ Darling~_`;
     if(command==='emojimix'){ if(!q.includes('+')) return reply("Use: .emojimix 😂+😭"); const [e1,e2]=q.split('+'); try{ const r=await axios.get(`https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&q=${e1}_${e2}&contentfilter=high&media_filter=minimal&component=proactive&collection=emoji_kitchen_v6`); return sock.sendMessage(from,{sticker:{url:r.data.results[0].media[0].tinygif.url}},{quoted:m}); }catch{ return reply("Mix failed, try other emojis"); } }
     if(command==='weather'){ if(!q) return reply("Use: .weather Lagos"); try{ const r=await axios.get(`https://wttr.in/${q}?format=3`); return reply(`🌤️ ${r.data}`); }catch{ return reply("Weather fail"); } }
 
-    // EXTRA RATE CMDS
     const rateMap={gay:"Gay",les:"Lesbian",simp:"Simp",beautiful:"Beautiful",cute:"Cute",hot:"Hot",handsome:"Handsome",smart:"Smart",dumb:"Dumb",sexy:"Sexy",horny:"Horny",cool:"Cool",ugly:"Ugly",kind:"Kind",evil:"Evil",rich:"Rich",howgay:"Gay",howhot:"Hot",howcute:"Cute",howsexy:"Sexy"};
     if(rateMap[command]){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`*${rateMap[command]} Meter* 🔥\n${targetTag} is ${p}% ${rateMap[command]}! ${p>70?'😍':p>40?'😅':'😂'}`,mentions},{quoted:m}); }
     if(command==='ship'||command==='love'||command==='crush'){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`💞 *Love Check*\n${senderJid.split('@')[0]} ❤️ ${targetTag} = ${p}% ${p>80?'Soulmates! 💖':p>50?'Good match! 💕':'Maybe friends 😅'}`,mentions:[...(mention?[mention]:[]),senderJid]},{quoted:m}); }
@@ -151,7 +148,6 @@ _Ara ara~ Darling~_`;
     if(command==='profile'||command==='whois'){ const targetJid=mention||senderJid; const num=targetJid.split('@')[0]; let pp=null; try{ pp=await sock.profilePictureUrl(targetJid,'image'); }catch{} let status="No bio"; try{ const st=await sock.fetchStatus(targetJid); status=st.status||status; }catch{} const info=`╭─ *PROFILE* 👤\n│ wa.me/${num}\n│ Bio: ${status.slice(0,120)}\n│ Mod: ${isMod(targetJid)?'Yes ✅':'No'}\n╰─ Kurumi`; if(pp) return sock.sendMessage(from,{image:{url:pp},caption:info},{quoted:m}); return reply(info); }
     if(command==='vv'||command==='viewonce'){ if(!quotedMsg) return reply("Reply to View Once with .vv"); const inner=(quotedMsg.viewOnceMessage||quotedMsg.viewOnceMessageV2||quotedMsg.viewOnceMessageV2Extension||quotedMsg).message||quotedMsg; try{ const buffer=await downloadMediaMessage({message:inner},'buffer',{}, {logger:pino(), reuploadRequest:sock.updateMediaMessage}); const type=Object.keys(inner)[0]; if(type.includes('image')) return sock.sendMessage(from,{image:buffer,caption:"✅ VV Saved"},{quoted:m}); if(type.includes('video')) return sock.sendMessage(from,{video:buffer,caption:"✅ VV Saved"},{quoted:m}); return reply("Saved!"); }catch(e){ return reply(`Failed VV: ${e.message}`); } }
 
-    // DONATE - ONLY PLACE OPAY SHOWS!
     if(command==='donate'||command==='donations'||command==='support'||command==='opay'){
       const donatePath='./media/menu/donate.jpg';
       const caption=`╭━━ *DONATE - SUPPORT KURUMI* ━━╮\n┃ Thank you darling~ 💖\n╰━━━━━━━━━━━━━━━━⭓\n\n💚 *Opay Account*\n• Number: *7041971847*\n• Name: *Benjamin Ojonugwa Bright*\n• Bank: *Opay*\n\n🙏 Every ₦ keeps Kurumi online 24/7!\n💬 Proof: wa.me/${OWNER}\n\n_Ara ara~ Thank you! 💖_`;

@@ -1,7 +1,8 @@
-// KURUMI V7 DECORATED FONTS - RENDER FIXED - GROQ - PAIRING CODE
+// KURUMI V7 DECORATED FONTS + QR + PAIRING CODE - RENDER FIXED
 require('http').createServer((_,res)=>res.end('KURUMI V7 ONLINE')).listen(process.env.PORT||10000,()=>console.log('PORT OPENED'));
 require('dotenv').config();
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 const fs = require('fs');
 const axios = require('axios');
@@ -35,20 +36,33 @@ async function startBot(){
   const sock=makeWASocket({version,auth:state,logger:pino({level:'silent'}),browser:['Kurumi MD','Chrome','1.0'],keepAliveIntervalMs:10000,markOnlineOnConnect:true});
   sock.ev.on('creds.update',saveCreds);
 
+  // PAIRING CODE IF YOU WANT IT
   if(!state.creds.registered){
     setTimeout(async()=>{
       try{
         let code=await sock.requestPairingCode(PAIRING_NUMBER);
         code=code?.match(/.{1,4}/g)?.join("-")||code;
         console.log(`\n=== PAIRING CODE FOR ${PAIRING_NUMBER}: ${code} ===\n`);
-      }catch(e){ console.log("Pairing error:",e.message); }
-    },3000);
+      }catch(e){}
+    },4000);
   }
 
   sock.ev.on('connection.update',async(up)=>{
-    const {connection,lastDisconnect}=up;
-    if(connection==='close' && lastDisconnect?.error?.output?.statusCode!==DisconnectReason.loggedOut) setTimeout(startBot,5000);
-    if(connection==='open') console.log("KURUMI V7 DECORATED GROQ ONLINE");
+    const {connection,lastDisconnect,qr}=up;
+    
+    // QR CODE IN LOGS - BRO YOU ASKED
+    if(qr){
+      console.log("\n\n===== SCAN QR BELOW =====\n");
+      qrcode.generate(qr,{small:false});
+      console.log("\n===== WHATSAPP > LINKED DEVICES > LINK A DEVICE =====\n\n");
+    }
+
+    if(connection==='close'){
+      console.log("Closed:",lastDisconnect?.error?.message);
+      if(lastDisconnect?.error?.output?.statusCode!==DisconnectReason.loggedOut) setTimeout(startBot,5000);
+      else console.log("LOGGED OUT - Run rm -rf session");
+    }
+    if(connection==='open') console.log("KURUMI V7 DECORATED GROQ ONLINE - QR + PAIRING READY");
   });
 
   sock.ev.on('messages.upsert',async({messages})=>{
@@ -66,7 +80,6 @@ async function startBot(){
     const args=body.slice(PREFIX.length).trim().split(/ +/); const command=args.shift().toLowerCase(); const q=args.join(' ');
     const mention=m.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; const targetTag=mention?"@"+mention.split('@')[0]:"𝐲𝐨𝐮";
 
-    // DECORATED FONTS MENU
     if(command==='menu'||command==='help'||command==='bot'||command==='kurumimenu'){
       const up=Math.floor((Date.now()-BOT_START)/3600000);
       const menuText=`╭━━━〔 *𝐊𝐔𝐑𝐔𝐌𝐈 𝐕𝟕 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄* 〕━━━╮
@@ -132,33 +145,12 @@ async function startBot(){
     if(command==='mods'){ return reply(`╭━ *𝐊𝐔𝐑𝐔𝐌𝐈 𝐌𝐎𝐃𝐒* 👑 ━╮\n┃ 𝐎𝐰𝐧𝐞𝐫: 𝐰𝐚.𝐦𝐞/${OWNER}\n┃ 𝐌𝐨𝐝: 𝐰𝐚.𝐦𝐞/2347047506371\n╰━━━━━━━━━━━━╯`); }
     if(command==='donate'||command==='opay'){ return reply(`╭━━ *𝐃𝐎𝐍𝐀𝐓𝐄* 💰 ━━╮\n┃ 𝐎𝐩𝐚𝐲: 𝟕𝟎𝟒𝟏𝟗𝟕𝟏𝟖𝟒𝟕\n┃ 𝐍𝐚𝐦𝐞: 𝐁𝐞𝐧𝐣𝐚𝐦𝐢𝐧 𝐎. 𝐁𝐫𝐢𝐠𝐡𝐭\n╰━━━━━━━━━━━━━━╯`); }
     if(command==='ping'){ const s=Date.now(); await reply("𝐏𝐢𝐧𝐠𝐢𝐧𝐠...⚡"); return reply(`𝐏𝐨𝐧𝐠 ${Date.now()-s}𝐦𝐬 💖`); }
-
-    if(command==='pint'){
-      if(!q) return reply("𝐔𝐬𝐞: .𝐩𝐢𝐧𝐭 𝐍𝐚𝐫𝐮𝐭𝐨");
-      return sock.sendMessage(from,{image:{url:`https://image.pollinations.ai/prompt/pinterest aesthetic ${encodeURIComponent(q)}?nologo=true`},caption:`*𝐏𝐢𝐧𝐭𝐞𝐫𝐞𝐬𝐭: ${q}*`},{quoted:m});
-    }
+    if(command==='pint'){ if(!q) return reply("𝐔𝐬𝐞: .𝐩𝐢𝐧𝐭 𝐍𝐚𝐫𝐮𝐭𝐨"); return sock.sendMessage(from,{image:{url:`https://image.pollinations.ai/prompt/pinterest aesthetic ${encodeURIComponent(q)}?nologo=true`},caption:`*𝐏𝐢𝐧𝐭𝐞𝐫𝐞𝐬𝐭: ${q}*`},{quoted:m}); }
     if(command==='goon'){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`*𝐆𝐨𝐨𝐧 𝐌𝐞𝐭𝐞𝐫* 💦\n${targetTag} 𝐢𝐬 ${p}% 𝐠𝐨𝐨𝐧𝐢𝐧𝐠!`,mentions:mention?[mention]:[]},{quoted:m}); }
-
-    if(command==='gcstatus'){
-      if(!isGroup) return reply("𝐆𝐫𝐨𝐮𝐩 𝐨𝐧𝐥𝐲");
-      const meta=await sock.groupMetadata(from); const isAdmin=meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("𝐀𝐝𝐦𝐢𝐧𝐬 𝐨𝐧𝐥𝐲");
-      if(!q){ const cur=gcStatusMap[from]; return reply(cur?`*𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬:*\n${cur}`:"𝐔𝐬𝐞: .𝐠𝐜𝐬𝐭𝐚𝐭𝐮𝐬 𝐖𝐞𝐥𝐜𝐨𝐦𝐞"); }
-      gcStatusMap[from]=q; saveGC(); return reply(`*𝐒𝐚𝐯𝐞𝐝:* ${q}`);
-    }
+    if(command==='gcstatus'){ if(!isGroup) return reply("𝐆𝐫𝐨𝐮𝐩 𝐨𝐧𝐥𝐲"); const meta=await sock.groupMetadata(from); const isAdmin=meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("𝐀𝐝𝐦𝐢𝐧𝐬 𝐨𝐧𝐥𝐲"); if(!q){ const cur=gcStatusMap[from]; return reply(cur?`*𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬:*\n${cur}`:"𝐔𝐬𝐞: .𝐠𝐜𝐬𝐭𝐚𝐭𝐮𝐬 𝐖𝐞𝐥𝐜𝐨𝐦𝐞"); } gcStatusMap[from]=q; saveGC(); return reply(`*𝐒𝐚𝐯𝐞𝐝:* ${q}`); }
     if(command==='delgcstatus'){ delete gcStatusMap[from]; saveGC(); return reply("𝐃𝐞𝐥𝐞𝐭𝐞𝐝 ✅"); }
     if(command==='getgcstatus'){ const cur=gcStatusMap[from]; return reply(cur?`*𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬:*\n${cur}`:"𝐍𝐨 𝐬𝐭𝐚𝐭𝐮𝐬 𝐬𝐞𝐭"); }
-
-    if(command==='tagall'){
-      if(!isGroup) return reply("𝐆𝐫𝐨𝐮𝐩 𝐨𝐧𝐥𝐲");
-      const metadata=await sock.groupMetadata(from);
-      const isAdmin=metadata.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("𝐀𝐝𝐦𝐢𝐧𝐬 𝐨𝐧𝐥𝐲");
-      const gcStat=gcStatusMap[from]?`𝐆𝐫𝐨𝐮𝐩 𝐒𝐭𝐚𝐭𝐮𝐬: ${gcStatusMap[from]}\n\n`:'';
-      let text=`${q?`${q}\n\n`:''}${gcStat}╭━━━ *𝐓𝐀𝐆𝐀𝐋𝐋* ━━━╮\n`;
-      metadata.participants.forEach(p=>{ text+=`│ ◦ @${p.id.split('@')[0]}\n`; }); text+=`╰━━━━━━━━━━━━╯`;
-      return sock.sendMessage(from,{text:text,mentions:metadata.participants.map(p=>p.id)},{quoted:m});
-    }
-
-    // keep all your other commands straight but with fonts...
+    if(command==='tagall'){ if(!isGroup) return reply("𝐆𝐫𝐨𝐮𝐩 𝐨𝐧𝐥𝐲"); const metadata=await sock.groupMetadata(from); const isAdmin=metadata.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("𝐀𝐝𝐦𝐢𝐧𝐬 𝐨𝐧𝐥𝐲"); const gcStat=gcStatusMap[from]?`𝐆𝐫𝐨𝐮𝐩 𝐒𝐭𝐚𝐭𝐮𝐬: ${gcStatusMap[from]}\n\n`:''; let text=`${q?`${q}\n\n`:''}${gcStat}╭━━━ *𝐓𝐀𝐆𝐀𝐋𝐋* ━━━╮\n`; metadata.participants.forEach(p=>{ text+=`│ ◦ @${p.id.split('@')[0]}\n`; }); text+=`╰━━━━━━━━━━━━╯`; return sock.sendMessage(from,{text:text,mentions:metadata.participants.map(p=>p.id)},{quoted:m}); }
     if(command==='jid'){ return reply(`*𝐘𝐨𝐮𝐫 𝐉𝐈𝐃:* ${senderJid}\n*𝐆𝐫𝐨𝐮𝐩 𝐉𝐈𝐃:* ${from}`); }
     if(command==='owner'){ return reply(`𝐎𝐰𝐧𝐞𝐫: 𝐰𝐚.𝐦𝐞/${OWNER}`); }
     if(['ai','gpt'].includes(command)){ if(!q) return reply("𝐔𝐬𝐞: .𝐚𝐢 𝐡𝐞𝐥𝐥𝐨"); const res=await kurumiAI(q); return reply(res); }

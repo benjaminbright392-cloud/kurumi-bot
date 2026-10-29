@@ -1,4 +1,4 @@
-// KURUMI V7 CLEAN - OPAY ONLY ON .DONATE + 30 EXTRA CMDS
+// KURUMI V7 DECORATED + FONTS + GROQ FRIENDLY
 require('http').createServer((_,res)=>res.end('KURUMI V7 ONLINE')).listen(process.env.PORT||10000,()=>console.log('PORT OPENED'));
 require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
@@ -9,10 +9,13 @@ const axios = require('axios');
 
 const PREFIX='.'; const OWNER='2349025648773'; const MODS=['2349025648773','2347047506371']; const BOT_START=Date.now();
 if(!fs.existsSync('./session')) fs.mkdirSync('./session',{recursive:true});
-if(!fs.existsSync('./media/menu')) fs.mkdirSync('./media/menu',{recursive:true});
-let antilinkGroups=new Set(); let antimentionGroups=new Set();
-try{ if(fs.existsSync('./antilink.json')) antilinkGroups=new Set(JSON.parse(fs.readFileSync('./antilink.json'))); if(fs.existsSync('./antimention.json')) antimentionGroups=new Set(JSON.parse(fs.readFileSync('./antimention.json'))); }catch{}
-function saveSettings(){ try{ fs.writeFileSync('./antilink.json',JSON.stringify([...antilinkGroups])); fs.writeFileSync('./antimention.json',JSON.stringify([...antimentionGroups])); }catch{} }
+let antilinkGroups=new Set(); let antimentionGroups=new Set(); let gcStatusMap={};
+try{ 
+  if(fs.existsSync('./antilink.json')) antilinkGroups=new Set(JSON.parse(fs.readFileSync('./antilink.json'))); 
+  if(fs.existsSync('./antimention.json')) antimentionGroups=new Set(JSON.parse(fs.readFileSync('./antimention.json')));
+  if(fs.existsSync('./gcstatus.json')) gcStatusMap=JSON.parse(fs.readFileSync('./gcstatus.json'));
+}catch{}
+function saveSettings(){ try{ fs.writeFileSync('./antilink.json',JSON.stringify([...antilinkGroups])); fs.writeFileSync('./antimention.json',JSON.stringify([...antimentionGroups])); fs.writeFileSync('./gcstatus.json',JSON.stringify(gcStatusMap)); }catch{} }
 function isMod(jid){ if(!jid) return false; const num=jid.split('@')[0].split(':')[0].replace(/[^0-9]/g,''); return MODS.some(m=>num.includes(m)||m.includes(num)); }
 
 async function kurumiAI(prompt){
@@ -20,13 +23,13 @@ async function kurumiAI(prompt){
     const key=process.env.GROQ_API_KEY;
     if(key){
       try{
-        const res=await axios.post('https://api.groq.com/openai/v1/chat/completions',{model:"llama-3.3-70b-versatile",messages:[{role:"system",content:"You are Kurumi Tokisaki, cute elegant yandere, max 350 chars."},{role:"user",content:prompt}],max_tokens:350,temperature:0.85},{headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},timeout:15000});
+        const res=await axios.post('https://api.groq.com/openai/v1/chat/completions',{model:"llama-3.3-70b-versatile",messages:[{role:"system",content:"You are Kurumi Tokisaki, cute elegant yandere girl, max 350 chars, flirty."},{role:"user",content:prompt}],max_tokens:350,temperature:0.85},{headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},timeout:15000});
         return res.data.choices[0].message.content.trim();
-      }catch(e){ console.log("Groq fail"); }
+      }catch(e){ console.log("Groq fail, using fallback"); }
     }
     const res=await axios.get(`https://text.pollinations.ai/${encodeURIComponent(`You are Kurumi Tokisaki, cute yandere, <350 chars. User: ${prompt}`)}?model=openai`,{timeout:20000});
     const txt = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-    return txt.slice(0, 500);
+    return txt.substring(0, 500);
   }catch(e){ return `Ara ara~ Try again darling! 💖`; }
 }
 
@@ -38,7 +41,7 @@ async function startBot(){
   sock.ev.on('connection.update',async(up)=>{
     const {connection,lastDisconnect,qr}=up; if(qr){ qrcode.generate(qr,{small:true}); }
     if(connection==='close' && lastDisconnect?.error?.output?.statusCode!==DisconnectReason.loggedOut) setTimeout(startBot,3000);
-    if(connection==='open') console.log("✅ KURUMI V7 CLEAN ONLINE");
+    if(connection==='open') console.log("✅ KURUMI V7 DECORATED GROQ ONLINE");
   });
 
   sock.ev.on('messages.upsert',async({messages})=>{
@@ -54,136 +57,147 @@ async function startBot(){
     if(/^kurumi(\s|$)/i.test(body)){ const prompt=body.replace(/^kurumi\s*/i,'').trim()||'hello'; const res=await kurumiAI(prompt); return reply(res); }
     if(!body.startsWith(PREFIX)) return;
     const args=body.slice(PREFIX.length).trim().split(/ +/); const command=args.shift().toLowerCase(); const q=args.join(' ');
-    const mention=m.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; const targetTag=mention?"@"+mention.split('@')[0]:"you"; const mentions=mention?[mention]:[];
+    const mention=m.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0]; const targetTag=mention?"@"+mention.split('@')[0]:"you";
 
+    // === DECORATED FONT MENU ===
     if(command==='menu'||command==='help'||command==='bot'||command==='kurumimenu'){
-      const menuText=`╭━━━ *KURUMI V7 ULTIMATE* ━━━╮
-┃ Prefix: . | AI: ✅
-┃ Owner: Benjamin Bright
-╰━━━━━━━━━━━━━━━━━━━⭓
+      const menuText=`╭━━━〔 *𝐊𝐔𝐑𝐔𝐌𝐈 𝐕𝟕 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄* 〕━━━╮
+┃
+┃ ▸ 𝐏𝐫𝐞𝐟𝐢𝐱 : .
+┃ ▸ 𝐎𝐰𝐧𝐞𝐫 : 𝐁𝐞𝐧𝐣𝐚𝐦𝐢𝐧 𝐁𝐫𝐢𝐠𝐡𝐭
+┃ ▸ 𝐔𝐩𝐭𝐢𝐦𝐞 : ${Math.floor((Date.now()-BOT_START)/3600000)}h
+┃ ▸ 𝐀𝐈 : 𝐆𝐫𝐨𝐪 𝐋𝐥𝐚𝐦𝐚 𝟑.𝟑 ✅
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-╭─ *BOT INFO* ─
-│ .alive .alive2 .ping .runtime
-│ .owner .mods .script .info .donate
+╭─〔 *𝐁𝐎𝐓 𝐈𝐍𝐅𝐎* 〕─
+│ ◦ .alive
+│ ◦ .alive2
+│ ◦ .ping
+│ ◦ .runtime
+│ ◦ .owner
+│ ◦ .mods
+│ ◦ .script
+│ ◦ .info
+│ ◦ .donate
 ╰──────────────
 
-╭─ *ADMIN* 👑 ─
-│ .kick @ .add 234xxx .promote @
-│ .demote @ .tagall .hidetag
-│ .close .open .link .revoke
-│ .setname [name] .setdesc [text]
-│ .antilink on/off .antimention on/off
-│ .warn @ .warnings @ .clearwarn @
+╭─〔 *𝐀𝐃𝐌𝐈𝐍 𝐏𝐀𝐍𝐄𝐋* 👑 〕─
+│ ◦ .kick @
+│ ◦ .add 234xxx
+│ ◦ .promote @
+│ ◦ .demote @
+│ ◦ .tagall [text]
+│ ◦ .hidetag [text]
+│ ◦ .close
+│ ◦ .open
+│ ◦ .link
+│ ◦ .revoke
+│ ◦ .setname
+│ ◦ .setdesc
+│ ◦ .antilink on/off
+│ ◦ .antimention on/off
+│ ◦ .gcstatus [text]
+│ ◦ .delgcstatus
 ╰──────────────
 
-╭─ *NEW* ✨ ─
-│ .profile @ .whois @ .jid
-│ .vv — save viewonce
-│ .ss — screenshot link
-│ .calc 2+2 .flip .roll
+╭─〔 *𝐍𝐄𝐖 𝐅𝐄𝐀𝐓𝐔𝐑𝐄𝐒* ✨ 〕─
+│ ◦ .profile @
+│ ◦ .whois @
+│ ◦ .jid
+│ ◦ .vv
+│ ◦ .calc 2+2
+│ ◦ .flip
+│ ◦ .roll
+│ ◦ .pint [query]
+│ ◦ .goon @
 ╰──────────────
 
-╭─ *FUN & RATE* 🎲 ─
-│ .gay @ .les @ .simp @ .beautiful @
-│ .cute @ .hot @ .handsome @ .smart @
-│ .ship @ .love @ .crush @ .kill @
-│ .dice .coin .slot .8ball .roast
-│ .joke .fact .quote .meme .truth .dare
-│ .howgay .howhot .howcute .howsexy
+╭─〔 *𝐅𝐔𝐍 & 𝐑𝐀𝐓𝐄* 🎲 〕─
+│ ◦ .gay @ .les @ .simp
+│ ◦ .beautiful @ .cute @
+│ ◦ .hot @ .handsome @
+│ ◦ .ship @ .love @ .crush
+│ ◦ .kill @ .howgay @ .goon
+│ ◦ .dice .coin .8ball
+│ ◦ .joke .fact .quote
+│ ◦ .meme .truth .dare
 ╰──────────────
 
-╭─ *ANIME* 💞 ─
-│ .hug @ .kiss @ .slap @ .pat @
-│ .cuddle @ .cry .waifu .neko .blush
-│ .smile .wave .dance .poke .bonk
-│ .highfive @ .handhold @ .nom @
+╭─〔 *𝐀𝐍𝐈𝐌𝐄* 💞 〕─
+│ ◦ .hug @ .kiss @ .slap
+│ ◦ .pat @ .cuddle @ .cry
+│ ◦ .waifu .neko .blush
+│ ◦ .smile .wave .dance
+│ ◦ .poke .bonk .highfive
+│ ◦ .handhold @ .nom @
 ╰──────────────
 
-╭─ *AI & MEDIA* 🧠 ─
-│ kurumi [ask] .ai [ask] .kurumi [ask]
-│ .imagine [prompt] .s .steal .toimg
-│ .toaudio .tomp3 .play [song]
+╭─〔 *𝐀𝐈 & 𝐌𝐄𝐃𝐈𝐀* 🧠 〕─
+│ ◦ kurumi [ask]
+│ ◦ .ai [ask]
+│ ◦ .imagine [prompt]
+│ ◦ .s
+│ ◦ .toimg
+│ ◦ .emojimix 😂+😭
+│ ◦ .attp [text]
+│ ◦ .weather [city]
+│ ◦ .time .date
 ╰──────────────
 
-╭─ *MORE FUN* 🔥 ─
-│ .emojimix 😂+😭 .sticker .attp [text]
-│ .trt [lang] [text] .tts [text]
-│ .weather [city] .time .date
-╰──────────────
+*𝐓𝐲𝐩𝐞 .𝐝𝐨𝐧𝐚𝐭𝐞 𝐭𝐨 𝐬𝐮𝐩𝐩𝐨𝐫𝐭 𝐊𝐮𝐫𝐮𝐦𝐢* 💖
+_𝐀𝐫𝐚 𝐚𝐫𝐚~ 𝐃𝐚𝐫𝐥𝐢𝐧𝐠~_`;
 
-Type .donate to support 💖
-_Ara ara~ Darling~_`;
-      try{ return await reply(menuText); }catch{ return await reply(menuText); }
+      return reply(menuText);
     }
 
     if(command==='alive'||command==='alive2'||command==='botstatus'){
       const up=Math.floor((Date.now()-BOT_START)/1000);
-      return reply(`*KURUMI V7 IS ALIVE!* 💖\n\n⏱️ Uptime: ${Math.floor(up/3600)}h ${Math.floor((up%3600)/60)}m ${up%60}s\n🤖 Status: Online\n⚡ Prefix: ${PREFIX}\n👑 Owner: Benjamin\n\n_Ara ara~ I'm here for you darling~_`);
+      return reply(`╭━ *𝐊𝐔𝐑𝐔𝐌𝐈 𝐀𝐋𝐈𝐕𝐄* 💖 ━╮\n┃ Uptime: ${Math.floor(up/3600)}h ${Math.floor((up%3600)/60)}m ${up%60}s\n┃ Status: Online ✅\n┃ Groq AI: Active ✅\n┃ Prefix: .\n╰━━━━━━━━━━━━╯`);
     }
-    if(command==='info'||command==='botinfo'||command==='script'){ return reply(`*KURUMI V7 ULTIMATE*\n\nCreator: Benjamin Ojonugwa Bright\nBase: Baileys + Groq AI\nVersion: 7.0 Final\nFeatures: 150+ cmds\nAI: Groq Llama 3.3 + Fallback\n\nUse .menu for cmds\nUse .donate to support`); }
-    if(command==='jid'){ return reply(`*Your JID:* ${senderJid}\n*Group JID:* ${from}\n*Is Group:* ${isGroup?'Yes':'No'}`); }
-    if(command==='time'||command==='date'){ const now=new Date(); return reply(`📅 ${now.toLocaleDateString()}\n⏰ ${now.toLocaleTimeString()}\n🌍 Africa/Lagos`); }
-    if(command==='calc'||command==='calculate'){ try{ const res=eval(q); return reply(`🧮 ${q} = *${res}*`); }catch{ return reply("Invalid calc. Use: .calc 2+2*5"); } }
-    if(command==='flip'||command==='coin'){ return reply(`🪙 ${Math.random()>0.5?'Heads':'Tails'}`); }
-    if(command==='roll'||command==='dice'){ return reply(`🎲 You rolled: ${Math.floor(Math.random()*6)+1}`); }
-    if(command==='attp'){ if(!q) return reply("Use: .attp hello"); return sock.sendMessage(from,{sticker:{url:`https://api.akuari.my.id/canvas/attp?text=${encodeURIComponent(q)}`}},{quoted:m}); }
-    if(command==='emojimix'){ if(!q.includes('+')) return reply("Use: .emojimix 😂+😭"); const [e1,e2]=q.split('+'); try{ const r=await axios.get(`https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&q=${e1}_${e2}&contentfilter=high&media_filter=minimal&component=proactive&collection=emoji_kitchen_v6`); return sock.sendMessage(from,{sticker:{url:r.data.results[0].media[0].tinygif.url}},{quoted:m}); }catch{ return reply("Mix failed, try other emojis"); } }
-    if(command==='weather'){ if(!q) return reply("Use: .weather Lagos"); try{ const r=await axios.get(`https://wttr.in/${q}?format=3`); return reply(`🌤️ ${r.data}`); }catch{ return reply("Weather fail"); } }
+    if(command==='mods'||command==='mod'){
+      return reply(`╭━ *𝐊𝐔𝐑𝐔𝐌𝐈 𝐌𝐎𝐃𝐒* 👑 ━╮\n┃ Owner: wa.me/${OWNER}\n┃ Mod: wa.me/2347047506371\n┃ Groq: Active ✅\n╰━━━━━━━━━━━━╯`);
+    }
+    if(command==='pint'||command==='pinterest'||command==='pinimg'){
+      if(!q) return reply("Use: .pint Naruto");
+      try{
+        const r = await axios.get(`https://api.akuari.my.id/search/pinterest?query=${encodeURIComponent(q)}`,{timeout:15000});
+        const images = r.data.result || r.data.hasil || r.data.data;
+        if(!images || !images[0]) return reply("No results: "+q);
+        const pick = images[Math.floor(Math.random()*Math.min(images.length,10))];
+        return sock.sendMessage(from,{image:{url:pick},caption:`📌 *𝐏𝐢𝐧𝐭𝐞𝐫𝐞𝐬𝐭:* ${q} 💖`},{quoted:m});
+      }catch(e){
+        return sock.sendMessage(from,{image:{url:`https://image.pollinations.ai/prompt/pinterest aesthetic ${encodeURIComponent(q)}?nologo=true`},caption:`📌 ${q}`},{quoted:m});
+      }
+    }
+    if(command==='goon'){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`😈 *𝐆𝐨𝐨𝐧 𝐌𝐞𝐭𝐞𝐫* 🔥\n${targetTag} is ${p}% gooning!`,mentions: mention?[mention]:[]},{quoted:m}); }
 
-    const rateMap={gay:"Gay",les:"Lesbian",simp:"Simp",beautiful:"Beautiful",cute:"Cute",hot:"Hot",handsome:"Handsome",smart:"Smart",dumb:"Dumb",sexy:"Sexy",horny:"Horny",cool:"Cool",ugly:"Ugly",kind:"Kind",evil:"Evil",rich:"Rich",howgay:"Gay",howhot:"Hot",howcute:"Cute",howsexy:"Sexy"};
-    if(rateMap[command]){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`*${rateMap[command]} Meter* 🔥\n${targetTag} is ${p}% ${rateMap[command]}! ${p>70?'😍':p>40?'😅':'😂'}`,mentions},{quoted:m}); }
-    if(command==='ship'||command==='love'||command==='crush'){ const p=Math.floor(Math.random()*101); return sock.sendMessage(from,{text:`💞 *Love Check*\n${senderJid.split('@')[0]} ❤️ ${targetTag} = ${p}% ${p>80?'Soulmates! 💖':p>50?'Good match! 💕':'Maybe friends 😅'}`,mentions:[...(mention?[mention]:[]),senderJid]},{quoted:m}); }
-    if(command==='kill'){ return sock.sendMessage(from,{text:`💀 @${senderJid.split('@')[0]} killed ${targetTag}! 🔪`,mentions:[...(mention?[mention]:[]),senderJid]},{quoted:m}); }
-    if(command==='8ball'){ const ans=["Yes! 💖","No! 🙅","Maybe... 🤔","Ask later ⏳","Kurumi says YES darling~ 💕","Definitely not! 😂","100%! 🔥"]; return reply(`🎱 ${ans[Math.floor(Math.random()*ans.length)]}`); }
-    if(command==='joke'){ try{ const j=await axios.get('https://official-joke-api.appspot.com/random_joke',{timeout:5000}); return reply(`😂 ${j.data.setup}\n*${j.data.punchline}*`); }catch{ return reply("Why did Kurumi blush? Because you looked at her! 💖"); } }
-    if(command==='fact'){ const facts=["Kurumi can clone herself!","Kurumi loves you!","You're cute!","Cats sleep 70% of life","Honey never spoils"]; return reply(`🧠 Fact: ${facts[Math.floor(Math.random()*facts.length)]}`); }
-    if(command==='quote'){ const quotes=["Love is time Kurumi gives you 💖","You're my darling~","Ara ara~","Time is precious"]; return reply(`💬 "${quotes[Math.floor(Math.random()*quotes.length)]}"`); }
-    if(command==='meme'){ try{ const res=await axios.get('https://meme-api.com/gimme',{timeout:8000}); return sock.sendMessage(from,{image:{url:res.data.url},caption:res.data.title},{quoted:m}); }catch{ return reply('Meme API down'); } }
-    if(command==='truth'){ const t=["What's your crush name?","Have you lied to your best friend?","Biggest secret?"]; return reply(`🤫 Truth: ${t[Math.floor(Math.random()*t.length)]}`); }
-    if(command==='dare'){ const d=["Send 'I love you' to your crush","Change pfp to Kurumi for 1h","Do 10 pushups"]; return reply(`😈 Dare: ${d[Math.floor(Math.random()*d.length)]}`); }
+    if(command==='gcstatus'||command==='setgcstatus'){
+      if(!isGroup) return reply("Group only");
+      const meta=await sock.groupMetadata(from); const isAdmin=meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("Admins only");
+      if(!q){ const cur=gcStatusMap[from]; return reply(cur?`╭━ *𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬* ━╮\n┃ ${cur}\n╰━━━━╯`:"Use: .gcstatus Welcome!"); }
+      gcStatusMap[from]=q; saveSettings(); return reply(`✅ *𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬 𝐒𝐚𝐯𝐞𝐝:*\n${q}`);
+    }
+    if(command==='delgcstatus'){ if(!isGroup) return reply("Group only"); const meta=await sock.groupMetadata(from); const isAdmin=meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("Admins only"); delete gcStatusMap[from]; saveSettings(); return reply("✅ GC Status deleted"); }
+    if(command==='getgcstatus'){ const cur=gcStatusMap[from]; return reply(cur?`𝐆𝐂 𝐒𝐭𝐚𝐭𝐮𝐬:\n${cur}`:"No status"); }
 
-    if(command==='ping'){ const start=Date.now(); await sock.sendMessage(from,{text:"*Pinging...*"}, {quoted:m}); const lat=Date.now()-start; const up=Math.floor((Date.now()-BOT_START)/1000); return reply(`🏓 Pong ${lat}ms | Uptime ${Math.floor(up/3600)}h ${Math.floor((up%3600)/60)}m`); }
-    if(command==='runtime'||command==='uptime'){ const up=Math.floor((Date.now()-BOT_START)/1000); return reply(`⏱️ ${Math.floor(up/3600)}h ${Math.floor((up%3600)/60)}m ${up%60}s`); }
-    if(command==='owner'){ return reply(`👑 Owner: wa.me/${OWNER}\nMod: wa.me/2347047506371\n\nType .donate to support 💖`); }
-    if(command==='profile'||command==='whois'){ const targetJid=mention||senderJid; const num=targetJid.split('@')[0]; let pp=null; try{ pp=await sock.profilePictureUrl(targetJid,'image'); }catch{} let status="No bio"; try{ const st=await sock.fetchStatus(targetJid); status=st.status||status; }catch{} const info=`╭─ *PROFILE* 👤\n│ wa.me/${num}\n│ Bio: ${status.slice(0,120)}\n│ Mod: ${isMod(targetJid)?'Yes ✅':'No'}\n╰─ Kurumi`; if(pp) return sock.sendMessage(from,{image:{url:pp},caption:info},{quoted:m}); return reply(info); }
-    if(command==='vv'||command==='viewonce'){ if(!quotedMsg) return reply("Reply to View Once with .vv"); const inner=(quotedMsg.viewOnceMessage||quotedMsg.viewOnceMessageV2||quotedMsg.viewOnceMessageV2Extension||quotedMsg).message||quotedMsg; try{ const buffer=await downloadMediaMessage({message:inner},'buffer',{}, {logger:pino(), reuploadRequest:sock.updateMediaMessage}); const type=Object.keys(inner)[0]; if(type.includes('image')) return sock.sendMessage(from,{image:buffer,caption:"✅ VV Saved"},{quoted:m}); if(type.includes('video')) return sock.sendMessage(from,{video:buffer,caption:"✅ VV Saved"},{quoted:m}); return reply("Saved!"); }catch(e){ return reply(`Failed VV: ${e.message}`); } }
-
-    if(command==='donate'||command==='donations'||command==='support'||command==='opay'){
-      const donatePath='./media/menu/donate.jpg';
-      const caption=`╭━━ *DONATE - SUPPORT KURUMI* ━━╮\n┃ Thank you darling~ 💖\n╰━━━━━━━━━━━━━━━━⭓\n\n💚 *Opay Account*\n• Number: *7041971847*\n• Name: *Benjamin Ojonugwa Bright*\n• Bank: *Opay*\n\n🙏 Every ₦ keeps Kurumi online 24/7!\n💬 Proof: wa.me/${OWNER}\n\n_Ara ara~ Thank you! 💖_`;
-      if(fs.existsSync(donatePath)) return sock.sendMessage(from,{image:fs.readFileSync(donatePath),caption},{quoted:m});
-      return reply(caption);
+    if(command==='donate'||command==='opay'){ return reply(`╭━━ *𝐃𝐎𝐍𝐀𝐓𝐄* ━━╮\n┃ 💚 Opay\n┃ Number: *7041971847*\n┃ Name: *Benjamin Ojonugwa Bright*\n┃ Bank: *Opay*\n╰━━━━━━━━━━╯`); }
+    if(command==='tagall'){
+      if(!isGroup) return reply("Group only");
+      const metadata=await sock.groupMetadata(from); const isAdmin=metadata.participants.filter(p=>p.admin).some(p=>p.id===senderJid)||isMod(senderJid); if(!isAdmin) return reply("Admins only");
+      const gcStat = gcStatusMap[from] ? `┏ *𝐆𝐫𝐨𝐮𝐩 𝐒𝐭𝐚𝐭𝐮𝐬:* ${gcStatusMap[from]} ┓\n\n` : '';
+      let text=`${gcStat}${q?`💬 *𝐌𝐞𝐬𝐬𝐚𝐠𝐞:* ${q}\n\n`:''}╭━ *𝐓𝐀𝐆𝐀𝐋𝐋* ━╮\n`;
+      const participants=metadata.participants;
+      for(let i=0;i<participants.length;i++){ text+=`│ ◦ @${participants[i].id.split('@')[0]}\n`; }
+      text+=`╰━━━━━━━━╯`;
+      return sock.sendMessage(from,{text:text.trim(),mentions:participants.map(p=>p.id)},{quoted:m});
     }
 
-    if(command==='antilink'){ if(!isGroup) return reply("Group only"); const meta=await sock.groupMetadata(from); if(!meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid) && !isMod(senderJid)) return reply("Admins only"); if(q==='on'){ antilinkGroups.add(from); saveSettings(); return reply("✅ Antilink ON"); } if(q==='off'){ antilinkGroups.delete(from); saveSettings(); return reply("❌ Antilink OFF"); } return reply(`Antilink: ${antilinkGroups.has(from)?'ON':'OFF'}`); }
-    if(command==='antimention'||command==='antitag'){ if(!isGroup) return reply("Group only"); const meta=await sock.groupMetadata(from); if(!meta.participants.filter(p=>p.admin).some(p=>p.id===senderJid) && !isMod(senderJid)) return reply("Admins only"); if(q==='on'){ antimentionGroups.add(from); saveSettings(); return reply("✅ AntiMention ON"); } if(q==='off'){ antimentionGroups.delete(from); saveSettings(); return reply("❌ AntiMention OFF"); } return reply(`AntiMention: ${antimentionGroups.has(from)?'ON':'OFF'}`); }
-
-    const animeCmds=['hug','kiss','slap','pat','cuddle','cry','waifu','neko','bully','bonk','blush','smile','wave','highfive','handhold','nom','happy','wink','poke','dance'];
-    if(animeCmds.includes(command)){ try{ const r=await axios.get(`https://api.waifu.pics/sfw/${command}`,{timeout:8000}); return sock.sendMessage(from,{image:{url:r.data.url},caption:`*${command.toUpperCase()}* ${targetTag} 💖`},{quoted:m}); }catch{ return reply('Anime API down'); } }
-    if(command==='s'||command==='sticker'){ const quoted=m.message.extendedTextMessage?.contextInfo?.quotedMessage; const mediaMsg=quoted?{message:quoted}:m; try{ const buf=await downloadMediaMessage(mediaMsg,'buffer',{}, {logger:pino(), reuploadRequest:sock.updateMediaMessage}); return sock.sendMessage(from,{sticker:buf},{quoted:m}); }catch{ return reply('Reply to image with .s'); } }
-    if(command==='toimg'){ const quoted=m.message.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage; if(!quoted) return reply('Reply to sticker'); const buf=await downloadMediaMessage({message:{stickerMessage:quoted}},'buffer',{}, {logger:pino(), reuploadRequest:sock.updateMediaMessage}); return sock.sendMessage(from,{image:buf},{quoted:m}); }
+    // other cmds
+    if(command==='ping'){ const s=Date.now(); await sock.sendMessage(from,{text:"Pinging..."}, {quoted:m}); return reply(`Pong ${Date.now()-s}ms | Groq ✅`); }
+    if(command==='owner'){ return reply(`Owner: wa.me/${OWNER}`); }
     if(['ai','gpt'].includes(command)){ if(!q) return reply(`Use: .${command} hello`); const res=await kurumiAI(q); return reply(res); }
     if(command==='imagine'){ if(!q) return reply('Use: .imagine prompt'); const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(q)}?width=768&height=1024&nologo=true&seed=${Math.floor(Math.random()*100000)}`; return sock.sendMessage(from,{image:{url},caption:`🎨 ${q}`},{quoted:m}); }
-
-    const adminCmds=['kick','promote','demote','tagall','hidetag','link','add','close','open','revoke','setname','setdesc'];
-    if(adminCmds.includes(command)){
-      if(!isGroup) return reply("Group only");
-      try{
-        const metadata=await sock.groupMetadata(from); const admins=metadata.participants.filter(p=>p.admin).map(p=>p.id);
-        const isAdmin=admins.includes(senderJid)||isMod(senderJid); if(!isAdmin) return reply("Admins only");
-        if(command==='kick'){ if(!mention) return reply('Use: .kick @'); await sock.groupParticipantsUpdate(from,[mention],'remove'); return reply('✅ Kicked'); }
-        if(command==='add'){ const num=q.replace(/[^0-9]/g,'')+'@s.whatsapp.net'; await sock.groupParticipantsUpdate(from,[num],'add'); return reply('✅ Added'); }
-        if(command==='promote'||command==='demote'){ await sock.groupParticipantsUpdate(from,[mention],command); return reply(`✅ ${command}d`); }
-        if(command==='tagall'){ let text=`📢 ${q}\n\n`; text+=metadata.participants.map((p,i)=>`${i+1}. @${p.id.split('@')[0]}`).join('\n'); return sock.sendMessage(from,{text,mentions:metadata.participants.map(p=>p.id)},{quoted:m}); }
-        if(command==='hidetag') return sock.sendMessage(from,{text:q||'Hi',mentions:metadata.participants.map(p=>p.id)},{quoted:m});
-        if(command==='close'){ await sock.groupSettingUpdate(from,'announcement'); return reply('🔒 Closed'); }
-        if(command==='open'){ await sock.groupSettingUpdate(from,'not_announcement'); return reply('🔓 Opened'); }
-        if(command==='link'){ const code=await sock.groupInviteCode(from); return reply('https://chat.whatsapp.com/'+code); }
-        if(command==='revoke'){ const code=await sock.groupRevokeInvite(from); return reply('✅ Revoked'); }
-        if(command==='setname'){ await sock.groupUpdateSubject(from,q); return reply('✅ Name changed'); }
-        if(command==='setdesc'){ await sock.groupUpdateDescription(from,q); return reply('✅ Desc changed'); }
-      }catch(e){ return reply(`Failed: ${e.message}`); }
-    }
   });
 }
 startBot();
